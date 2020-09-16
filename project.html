@@ -1,0 +1,111 @@
+<html>
+
+<head>
+<title>Title</title>
+</head>
+
+<body>
+
+The goal of the project is to predict the manner in which they did the exercise.
+the "classe" variable in the dataset represents that variable.
+```{r , echo=TRUE}
+training=
+  dim(training)
+
+```
+as can be seen in this data their too many columns and so many of them have no data(NA)
+so the columns which have more than 19000 observations empty should be removed
+
+
+```{r , echo=TRUE}
+a=1
+b=1
+for(i in c(1:160))
+{  if(sum(is.na(training[,i]))>19000)
+{b[a]= i
+a=a+1}}
+training= training[,-b]
+testing= testing[,-b]
+dim(training)
+```
+we can see now their are only 60 columns
+
+Some exploraty data analysis
+```{r , echo=TRUE}
+str(training)
+unique(training$user_name)
+```
+their are 5 different users on which test was conducted
+
+Deleting the columns with useless information for prediction model - like name, time, window etc
+i.e from column 1-7
+```{r , echo=TRUE}
+training= training[,-c(1:7)]
+testing= testing[,-c(1:7)]
+```
+
+
+
+```{r , echo=TRUE}
+training$classe= factor(training$classe)
+plot(training$classe, col="green", main = "classe frequency", xlab = "classe", ylab = "frequency")
+```
+
+we will prepare validation dataset for cross validation and name it "vald"
+```{r , echo=TRUE}
+ind= createDataPartition(training$classe, p=.75,list = FALSE)
+ind= as.numeric(ind)
+vald= training[-ind,]
+training= training[ind,]
+
+```
+
+
+now we will build models to predict the classe of the observation
+```{r , echo=TRUE}
+modelrp= train(classe~., data= training, method="rpart")
+predrp= predict(modelrp, vald)
+fancyRpartPlot(modelrp$finalModel)
+confusionMatrix(predrp, vald$classe)
+```
+
+
+
+
+
+
+
+```{r,echo=True}
+modld= train(classe~., data= training, method="lda")
+predlda= predict(modld, vald)
+confusionMatrix(predlda, vald$classe)
+
+
+
+```
+we have built 2 models and compared the accuracy
+
+now we will combine all the models using stacked model
+and predict the value of testing dataset using the final model
+```{r , echo=TRUE}
+addata= data.frame(classe=vald$classe, predrp, predlda)
+modfnl=train(classe~., data= addata, method="gbm")
+predictions= predict(modfnl, vald$classe)
+confusionMatrix(predictions, vald$classe)
+
+```
+
+
+
+
+
+
+```{r, echo=FALSE}
+
+```
+
+Note that the `echo = FALSE` parameter was added to the code chunk to prevent printing of the R code that generated the plot.
+
+
+</body>
+</html>
